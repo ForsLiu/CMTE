@@ -118,7 +118,7 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
 
 
 for (i in 1:nrow(param_grid)) {
-  r_vec <- c(param_grid$r1[i], param_grid$r2[i])
+  r_vec <- r_vec_list[[param_grid$r_index[i]]]
   p     <- param_grid$p[i]
   eps   <- param_grid$eps[i]
   n     <- param_grid$n[i]

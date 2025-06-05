@@ -10,7 +10,7 @@
 
 
 # parameter grids
-r_vec_list <- list(c(10,10),c(20,20),c(30,30)) 
+r_vec_list <- list(c(10,10), c(5,6,7))
 p_list     <- c(3)
 eps_list   <- c(0.1)
 n_list     <- c(10, 50, 100)
@@ -18,10 +18,9 @@ Omega_list <- c(3)
 f_num_list <- c(1, 2)
 n_rep      <- 2
 
-#combinations
+# combinations
 param_grid <- expand.grid(
-  r1 = sapply(r_vec_list, `[`, 1),
-  r2 = sapply(r_vec_list, `[`, 2),
+  r_index = seq_along(r_vec_list),
   p = p_list,
   eps = eps_list,
   n = n_list,

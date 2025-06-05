@@ -2,7 +2,7 @@
 rows <- list()
 
 for (i in 1:nrow(param_grid)) {
-  r_vec <- c(param_grid$r1[i], param_grid$r2[i])
+  r_vec <- r_vec_list[[param_grid$r_index[i]]]
   p     <- param_grid$p[i]
   eps   <- param_grid$eps[i]
   n     <- param_grid$n[i]
@@ -10,6 +10,7 @@ for (i in 1:nrow(param_grid)) {
   f_num <- param_grid$f_num[i]
   
   r_str <- paste(r_vec, collapse = "x")
+  r_latex <- paste0("\\(", paste(r_vec, collapse = " \\times "), "\\)")
   Omega_latex <- "\\(\\exp(3)\\)"
   
   f_expr <- switch(as.character(f_num),
@@ -64,7 +65,7 @@ for (i in 1:nrow(param_grid)) {
     
     if (j == 1) {
       row <- c(
-        paste0("\\multirow{", n_methods, "}{*}{\\(", gsub("x", " \\\\times ", r_str), "\\)}"),
+        paste0("\\multirow{", n_methods, "}{*}{", r_latex, "}"),
         paste0("\\multirow{", n_methods, "}{*}{\\(", p, "\\)}"),
         paste0("\\multirow{", n_methods, "}{*}{\\(", eps, "\\)}"),
         paste0("\\multirow{", n_methods, "}{*}{\\(", n, "\\)}"),
@@ -100,13 +101,12 @@ headers <- c(
   "\\(\\mathcal{D}(\\beta_2, \\hat{\\beta}_2)\\)"
 )
 
-# Output LaTeX table
 header_row <- paste(headers, collapse = " & ")
 latex_rows <- lapply(rows, function(row) paste(row, collapse = " & "))
 
+# Output LaTeX table with horizontal lines between each file block
 cat("\\begin{table}[ht]\n")
 cat("\\centering\n")
-
 cat("\\label{tab:beta_results}\n")
 cat("\\begin{tabular}{", paste(rep("l", length(headers)), collapse = ""), "}\n")
 cat("\\hline\n")
@@ -115,7 +115,7 @@ cat("\\hline\n")
 
 for (i in seq_along(latex_rows)) {
   cat(latex_rows[[i]], " \\\\\n")
-  if (i %% 3 == 0) cat("\\hline\n")  # Add line after every 3 rows (i.e., each file)
+  if (i %% 3 == 0) cat("\\hline\n")  # Add black line between method groups
 }
 
 cat("\\end{tabular}\n")
