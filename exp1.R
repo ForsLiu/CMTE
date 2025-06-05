@@ -19,7 +19,7 @@ set.seed(123)
 
 
 
-results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS"), .combine = rbind) %dopar% {
+results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS","TRES"), .combine = rbind) %dopar% {
   r_vec <- c(param_grid$r1[i], param_grid$r2[i])
   p     <- param_grid$p[i]
   eps   <- param_grid$eps[i]
