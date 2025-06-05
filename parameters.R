@@ -10,7 +10,7 @@
 
 
 # parameter grids
-r_vec_list <- list(c(10,10), c(5,6,7))
+r_vec_list <- list(c(10,10))
 p_list     <- c(3)
 eps_list   <- c(0.1)
 n_list     <- c(10, 50, 100)
