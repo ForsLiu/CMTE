@@ -4,7 +4,7 @@
 library(MASS)
 library(rTensor)
 
-
+set.seed(123)
 DGen_B <- function(r_vec, p) {
   m <- length(r_vec)
   
@@ -88,7 +88,7 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
   } else if (function_num == 2) {
     X_tilde <- exp(2 * abs(X_mat))
   } else {
-    stop("Invalid function_num. Use 1 or 2.")
+    stop("Invalid function_num.")
   }
   
   # Unfold B along last mode → shape: p × (r1⋯rm)
@@ -104,14 +104,49 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
   return(Y)
 }
 
-B_list    <- DGen_B(r_vec, p)
-B         <- B_list$B
-beta_list <- B_list$beta_list
-X         <- DGen_X(n, p)
-Sigma     <- DGen_Sigma(beta_list, exp(Omega))
-Y         <- DGen_Y(B, X, eps, Sigma, function_num=f_num)
+#B_list    <- DGen_B(r_vec, p)
+#B         <- B_list$B
+#beta_list <- B_list$beta_list
+#X         <- DGen_X(n, p)
+#Sigma     <- DGen_Sigma(beta_list, exp(Omega))
+#Y         <- DGen_Y(B, X, eps, Sigma, function_num=f_num)
+#
+#r_str <- paste(r_vec, collapse = "x")
+#filename <- sprintf("data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",n, p, r_str, eps, f_num, n_rep)
+#save(Y, X, B_list, file = filename)
+#message("Saved to: ", filename)
 
-r_str <- paste(r_vec, collapse = "x")
-filename <- sprintf("data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",n, p, r_str, eps, f_num, n_rep)
-save(Y, X, B_list, file = filename)
-message("Saved to: ", filename)
+
+for (i in 1:nrow(param_grid)) {
+  r_vec <- c(param_grid$r1[i], param_grid$r2[i])
+  p     <- param_grid$p[i]
+  eps   <- param_grid$eps[i]
+  n     <- param_grid$n[i]
+  Omega <- param_grid$Omega[i]
+  f_num <- param_grid$f_num[i]
+  
+  # Lists to collect replications
+  Y_list <- vector("list", n_rep)
+  X_list <- vector("list", n_rep)
+  B_list_all <- vector("list", n_rep)
+  
+  for (rep in 1:n_rep) {
+    B_list    <- DGen_B(r_vec, p)
+    B         <- B_list$B
+    beta_list <- B_list$beta_list
+    X         <- DGen_X(n, p)
+    Sigma     <- DGen_Sigma(beta_list, exp(Omega))
+    Y         <- DGen_Y(B, X, eps, Sigma, function_num = f_num)
+    
+    # Store results
+    Y_list[[rep]]     <- Y
+    X_list[[rep]]     <- X
+    B_list_all[[rep]] <- B_list
+  }
+  
+  # Save everything in one file
+  r_str <- paste(r_vec, collapse = "x")
+  filename <- sprintf("data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData", n, p, r_str, eps, f_num, n_rep)
+  save(Y_list, X_list, B_list_all, file = filename)
+  message("Saved to: ", filename)
+}
