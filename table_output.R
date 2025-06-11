@@ -16,6 +16,7 @@ for (i in 1:nrow(param_grid)) {
   f_expr <- switch(as.character(f_num),
                    "1" = "\\(X\\)",
                    "2" = "\\(\\exp(2|X|)\\)",
+                   "3" = "\\(sin(X)\\)",
                    "f(X) = \\text{Unknown}")
   
   file <- sprintf("results/coef_est_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
@@ -30,22 +31,22 @@ for (i in 1:nrow(param_grid)) {
   load(file, envir = env)
   
   acc_lists <- list(
-    "CMTE"  = env$cmte_acc_list,
-    "TRR"   = env$trr_acc_list,
-    "TMDDM" = env$tmddm_acc_list
+    "CMTE-1D"   = env$cmte_1d_acc_list,
+    "CMTE-ECD"  = env$cmte_ecd_acc_list,
+    "TRR-1D"    = env$trr_1d_acc_list,
+    "TRR-ECD"   = env$trr_ecd_acc_list,
+    "TMDDM"     = env$tmddm_acc_list
   )
   
   methods <- names(acc_lists)
   n_methods <- length(methods)
-  
-  # Precompute accuracy map
+
   method_acc_map <- lapply(acc_lists, function(acc) {
     acc <- round(acc, 4)
     while (length(acc) < 2) acc <- c(acc, NA)
     acc
   })
   
-  # Determine bold minimum for each beta_i
   acc_matrix <- do.call(rbind, method_acc_map)
   min_indices <- apply(acc_matrix, 2, function(col) {
     if (all(is.na(col))) return(rep(FALSE, length(col)))
@@ -87,7 +88,6 @@ for (i in 1:nrow(param_grid)) {
   }
 }
 
-# Table headers (no time column)
 headers <- c(
   "\\(\\text{Dimension}\\)",
   "\\(p\\)",
@@ -104,7 +104,6 @@ headers <- c(
 header_row <- paste(headers, collapse = " & ")
 latex_rows <- lapply(rows, function(row) paste(row, collapse = " & "))
 
-# Output LaTeX table with horizontal lines between each file block
 cat("\\begin{table}[ht]\n")
 cat("\\centering\n")
 cat("\\label{tab:beta_results}\n")
@@ -115,9 +114,9 @@ cat("\\hline\n")
 
 for (i in seq_along(latex_rows)) {
   cat(latex_rows[[i]], " \\\\\n")
-  if (i %% 3 == 0) cat("\\hline\n")  # Add black line between method groups
+  if (i %% 5 == 0) cat("\\hline\n") 
 }
 
 cat("\\end{tabular}\n")
-cat("\\caption{Estimation Accuracy for \\(\\beta_i\\)'s from CMTE, TRR, and TMDDM}\n")
+cat("\\caption{Estimation Accuracy for \\(\\beta_i\\)'s from CMTE, TRR, and TMDDM variants}\n")
 cat("\\end{table}\n")

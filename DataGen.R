@@ -1,6 +1,3 @@
-#setwd("./CMTE")
-
-
 library(MASS)
 library(rTensor)
 
@@ -79,7 +76,7 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
   p <- dims_B[m + 1]
   n <- dim(X@data)[2]
   
-  # Get X matrix of shape n × p
+  # Get X matrix of shape n x p
   X_mat <- t(X@data)
   
   # Apply transformation
@@ -87,15 +84,17 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
     X_tilde <- X_mat
   } else if (function_num == 2) {
     X_tilde <- exp(2 * abs(X_mat))
+  } else if (function_num == 3) {
+    X_tilde <- sin(X_mat)
   } else {
     stop("Invalid function_num.")
   }
   
-  # Unfold B along last mode → shape: p × (r1⋯rm)
-  Bmat <- t(k_unfold(B, m = m + 1)@data)  # shape: (r1⋯rm) × p
+  # Unfold B along last mode
+  Bmat <- t(k_unfold(B, m = m + 1)@data)
   
   # Generate noise
-  E <- MASS::mvrnorm(n, mu = rep(0, nrow(Bmat)), Sigma = Sigma)
+  E <- DGen_E(n, Sigma)
   
   # Compute Y
   Y_vec <- X_tilde %*% t(Bmat) + eps * E
@@ -104,17 +103,6 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
   return(Y)
 }
 
-#B_list    <- DGen_B(r_vec, p)
-#B         <- B_list$B
-#beta_list <- B_list$beta_list
-#X         <- DGen_X(n, p)
-#Sigma     <- DGen_Sigma(beta_list, exp(Omega))
-#Y         <- DGen_Y(B, X, eps, Sigma, function_num=f_num)
-#
-#r_str <- paste(r_vec, collapse = "x")
-#filename <- sprintf("data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",n, p, r_str, eps, f_num, n_rep)
-#save(Y, X, B_list, file = filename)
-#message("Saved to: ", filename)
 
 
 for (i in 1:nrow(param_grid)) {
@@ -130,21 +118,21 @@ for (i in 1:nrow(param_grid)) {
   X_list <- vector("list", n_rep)
   B_list_all <- vector("list", n_rep)
   
+  B_list    <- DGen_B(r_vec, p)
+  B         <- B_list$B
+  beta_list <- B_list$beta_list
+  Sigma     <- DGen_Sigma(beta_list, exp(Omega))
+  
   for (rep in 1:n_rep) {
-    B_list    <- DGen_B(r_vec, p)
-    B         <- B_list$B
-    beta_list <- B_list$beta_list
+    
     X         <- DGen_X(n, p)
-    Sigma     <- DGen_Sigma(beta_list, exp(Omega))
     Y         <- DGen_Y(B, X, eps, Sigma, function_num = f_num)
     
-    # Store results
     Y_list[[rep]]     <- Y
     X_list[[rep]]     <- X
     B_list_all[[rep]] <- B_list
   }
   
-  # Save everything in one file
   r_str <- paste(r_vec, collapse = "x")
   filename <- sprintf("data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData", n, p, r_str, eps, f_num, n_rep)
   save(Y_list, X_list, B_list_all, file = filename)

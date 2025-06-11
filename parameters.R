@@ -13,7 +13,7 @@
 r_vec_list <- list(c(10,10))
 p_list     <- c(3)
 eps_list   <- c(0.1)
-n_list     <- c(10, 50, 100)
+n_list     <- c(50,100,200,500)
 Omega_list <- c(3)
 f_num_list <- c(1, 2)
 n_rep      <- 2

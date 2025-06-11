@@ -3,12 +3,13 @@ library(pracma)
 library(parallel)
 library(doParallel)
 library(foreach)
+library("TRES")
 
 TMDDM <- function(X, Y) {
-  n <- nrow(X)
+  n <- ncol(X)
   Y_dims <- dim(Y)
-  M <- length(Y_dims) - 1
-  M_list <- vector("list", M)
+  M <- length(Y_dims) - 1 #number of mode of response
+  M_list <- vector("list", M) #TMDDM output
   
   for (k in 1:M) {
     Yk <- k_unfold(as.tensor(Y), m = k)@data
@@ -30,7 +31,7 @@ TMDDM <- function(X, Y) {
       for (j in 1:n) {
         Yi <- Yk_mat[i, ] - Yk_bar
         Yj <- Yk_mat[j, ] - Yk_bar
-        diff <- X[i, ] - X[j, ]
+        diff <- X[, i] - X[, j] 
         M_k <- M_k - (Yi %*% t(Yj)) * sqrt(sum(diff^2)) / (n^2)
       }
     }
@@ -42,7 +43,7 @@ TMDDM <- function(X, Y) {
 }
 
 
-CMTE <- function(X, Y, M_xy, eps = 1e-6) {
+CMTE <- function(X, Y, M_xy, eps = 1e-6, method) {
 
   Y_dims <- dim(Y)
   n <- Y_dims[length(Y_dims)]
@@ -62,14 +63,12 @@ CMTE <- function(X, Y, M_xy, eps = 1e-6) {
     }
     
     Sigma_Y <- cov(Yk_mat)
-    M_k <- M_xy[[k]]
-    B_k <- Sigma_Y + M_k + eps * diag(d_k)
-    A_k <- Sigma_Y
-    
-    eig_out <- eigen(solve(B_k, A_k), symmetric = FALSE)
-    beta_k <- Re(eig_out$vectors[, 1])
-    beta_k <- beta_k / sqrt(sum(beta_k^2))
-    beta_list[[k]] <- beta_k
+    if (method == "1D") {
+      beta_list[[k]] <- OptM1D(Sigma_Y, M_xy[[k]], 1)
+    }
+    else if (method == "ECD") {
+      beta_list[[k]] <- ECD(Sigma_Y, M_xy[[k]], 1)
+    }
   }
   
   return(beta_list)
