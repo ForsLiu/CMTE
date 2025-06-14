@@ -31,28 +31,46 @@ DGen_X <- function(n, p) {
   return(as.tensor(X_tensor))
 }
 
+DGen_Omega <- function(m,c) {
+  Omega <- matrix(0, m, m)
+  for (i in 1:m) {
+    for (j in 1:m) {
+      Omega[i, j] <- 0.5^abs(i - j) * c
+    }
+  }
+  return(Omega)
+}
+
 DGen_Omega0 <- function(r) {
-  Or <- qr.Q(qr(matrix(rnorm((r - 1)^2), nrow = r - 1)))
-  diag_vals <- exp(seq(2, -2, length.out = r - 1))
+  Or <- qr.Q(qr(matrix(rnorm((r - 2)^2), nrow = r - 2)))
+  diag_vals <- exp(seq(2, -1.5, length.out = r - 2))
   Or %*% diag(diag_vals) %*% t(Or)
 }
 
 DGen_Sigma <- function(beta_list, Omega_c) {
   m <- length(beta_list)
   Sigma_list <- vector("list", m)
+  #alpha_list <- vector("list", m)
   
   for (i in seq_len(m)) {
     beta <- beta_list[[i]]
     r <- nrow(beta)
     d <- ncol(beta)
-    d0 <- r - d                             
+    d0 <- r - d
     
-    Q_full <- qr.Q(qr(cbind(beta, matrix(runif(r * d0), nrow = r))))
-    beta0 <- Q_full[, (d + 1):r]
+    alpha <- matrix(runif(r, -1, 1), nrow = r) #10x1
+    tilde_beta <- qr.Q(qr(cbind(beta, alpha)))  # 10 x 2 orthogonalized, t(tilde_beta) %*% tilde_beta in I_2x2
+    tilde_beta_full <- qr.Q(qr(cbind(tilde_beta, matrix(runif(r * d0), nrow = r))))
     
-    Omega0 <- DGen_Omega0(r)
-    Sigma_i <- beta %*% Omega_c %*% t(beta) + beta0 %*% Omega0 %*% t(beta0)
+    Omega <- DGen_Omega(2,Omega_c) #2x2
+    Omega0 <- DGen_Omega0(r)  #(ri-2)x(ri-2) = 8x8
+    
+    tilde_beta0 <- tilde_beta_full[, 3:r, drop = FALSE] #10x8
+    
+    Sigma_i <- tilde_beta %*% Omega %*% t(tilde_beta) + tilde_beta0 %*% Omega0 %*% t(tilde_beta0)
+    #10x2 * 2x2 2x10 + 10x8 * 8x8 *8x10  
     Sigma_list[[i]] <- Sigma_i
+    #alpha_list[[i]] <- alpha
   }
   
   Sigma <- Sigma_list[[1]]
@@ -110,11 +128,9 @@ DGen_Y <- function(B, X, eps, Sigma, function_num) {
 
 rp_grid <- unique(param_grid[c("r_index", "p")])
 
-#generate parameter once
 
 
 for (i in 1:nrow(param_grid)) {
-
   r_vec <- r_vec_list[[param_grid$r_index[i]]]
   p     <- param_grid$p[i]
   eps   <- param_grid$eps[i]
@@ -122,6 +138,7 @@ for (i in 1:nrow(param_grid)) {
   Omega_c <- param_grid$Omega_c[i]
   f_num <- param_grid$f_num[i]
   
+  #generate parameter once
   B_list    <- DGen_B(r_vec, p)
   B         <- B_list$B
   beta_list <- B_list$beta_list
@@ -131,7 +148,7 @@ for (i in 1:nrow(param_grid)) {
   Y_list <- vector("list", n_rep)
   X_list <- vector("list", n_rep)
   B_list_all <- vector("list", n_rep)
-
+  
   
   for (rep in 1:n_rep) {
     
