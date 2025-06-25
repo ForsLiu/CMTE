@@ -142,7 +142,6 @@ for (i in 1:nrow(param_grid)) {
   message(sprintf("=== Start: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d ===", n, p, r_str, eps, f_num))
   t_start <- Sys.time()
   
-  # Generate once
   B_list    <- DGen_B(r_vec, p)
   B         <- B_list$B
   beta_list <- B_list$beta_list
