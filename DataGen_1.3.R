@@ -150,7 +150,16 @@ for (i in 1:nrow(param_grid)) {
   B_list_all <- vector("list", n_rep)
   
   
+  start_time <- Sys.time()
+  
   for (rep in 1:n_rep) {
+    
+    if (rep %% ceiling(n_rep / 5) == 0 || rep == 1 || rep == n_rep) {
+      elapsed <- difftime(Sys.time(), start_time, units = "secs")
+      message(sprintf("Progress: rep %d / %d | elapsed = %.1f sec | n = %d, p = %d, r = %s, eps = %.2f, f_num = %d",
+                      rep, n_rep, as.numeric(elapsed),
+                      n, p, paste(r_vec, collapse = "x"), eps, f_num))
+    }
     
     X         <- DGen_X(n, p)
     Y         <- DGen_Y(B, X, eps, Sigma, function_num = f_num)
@@ -161,7 +170,7 @@ for (i in 1:nrow(param_grid)) {
   }
   
   r_str <- paste(r_vec, collapse = "x")
-  filename <- sprintf("data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData", n, p, r_str, eps, f_num, n_rep)
+  filename <- sprintf("Data_1.3/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData", n, p, r_str, eps, f_num, n_rep)
   save(Y_list, X_list, B_list_all, file = filename)
   message("Saved to: ", filename)
 }
