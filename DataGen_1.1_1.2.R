@@ -104,7 +104,12 @@ for (i in 1:nrow(param_grid)) {
   f_num   <- param_grid$f_num[i]
   
   r_str   <- paste(r_vec, collapse = "x")
-  message(sprintf("=== Start: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d ===", n, p, r_str, eps, f_num))
+  dir_name <- sprintf("Data_1.1_1.2/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d", 
+                      n, p, r_str, eps, f_num, n_rep)
+  dir.create(dir_name, recursive = TRUE, showWarnings = FALSE)
+  
+  message(sprintf("=== Start: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d ===", 
+                  n, p, r_str, eps, f_num))
   
   t_start <- Sys.time()
   
@@ -115,19 +120,15 @@ for (i in 1:nrow(param_grid)) {
   Sigma <- DGen_Sigma(beta_list, exp(Omega_c))
   L <- chol(Sigma)
   
-  Y_list <- vector("list", n_rep)
-  X_list <- vector("list", n_rep)
-  B_list_all <- vector("list", n_rep)
-  
   for (rep in 1:n_rep) {
     rep_start <- Sys.time()
     
     X <- DGen_X(n, p)
     Y <- DGen_Y(B, X, eps, L, function_num = f_num)
     
-    Y_list[[rep]]     <- Y
-    X_list[[rep]]     <- X
-    B_list_all[[rep]] <- B_list
+    file_name <- sprintf("%s/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
+                         dir_name, n, p, r_str, eps, f_num, rep)
+    save(Y, X, B_list, file = file_name)
     
     if (rep %% ceiling(n_rep / 5) == 0 || rep == 1 || rep == n_rep) {
       cur_time <- Sys.time()
@@ -137,10 +138,6 @@ for (i in 1:nrow(param_grid)) {
                       n, p, r_str, eps, f_num))
     }
   }
-  
-  filename <- sprintf("Data_1.1_1.2/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData", 
-                      n, p, r_str, eps, f_num, n_rep)
-  save(Y_list, X_list, B_list_all, file = filename)
   
   t_end <- Sys.time()
   message(sprintf("=== Completed: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d | Total Time: %.2f sec ===\n",

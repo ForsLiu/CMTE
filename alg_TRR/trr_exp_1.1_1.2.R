@@ -5,11 +5,9 @@ library(foreach)
 library(doParallel)
 library("TRES")
 
-library(foreach)
-library(doParallel)
-library("TRES")
+unlink(list.files("results_1.1_1.2", pattern = "^coef_est_cmte", full.names = TRUE), force = TRUE)
 
-n_cores <- parallel::detectCores() - 1
+n_cores <- max(1, min(parallel::detectCores() - 2, nrow(param_grid)))
 cl <- makeCluster(n_cores)
 registerDoParallel(cl)
 
@@ -27,14 +25,6 @@ results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS", 
     f_num <- param_grid$f_num[i]
     
     r_str <- paste(r_vec, collapse = "x")
-    input_file <- sprintf("Data_1.1_1.2/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
-                          n, p, r_str, eps, f_num, n_rep)
-    
-    if (!file.exists(input_file)) {
-      return(data.frame(n = n, f_num = f_num, r = r_str, message = "File missing"))
-    }
-    
-    load(input_file)  # loads Y_list, X_list, B_list_all
     
     trr_1d_acc_list   <- numeric(n_rep)
     trr_ecd_acc_list  <- numeric(n_rep)
@@ -42,24 +32,30 @@ results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS", 
     trr_ecd_time_list <- numeric(n_rep)
     
     for (rep in 1:n_rep) {
-      Y <- Y_list[[rep]]
-      X <- X_list[[rep]]
-      beta_list <- B_list_all[[rep]]$beta_list
+      input_file <- sprintf("Data_1.1_1.2/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
+                            n, p, r_str, eps, f_num, n_rep,
+                            n, p, r_str, eps, f_num, rep)
+      
+      if (!file.exists(input_file)) {
+        message(sprintf("Missing file: %s", input_file))
+        next
+      }
+      
+      load(input_file)  # loads Y, X, B_list
+      beta_list <- B_list$beta_list
       
       # TRR - 1D
       t1 <- system.time({
         TReg_1D <- TRR.fit(X@data, Y, u = rep(1, length(r_vec)), method = "1D")
       })["elapsed"]
-      trr_1d_est <- TReg_1D$Gamma
-      trr_1d_acc_list[rep] <- beta_acc(trr_1d_est, beta_list)
+      trr_1d_acc_list[rep] <- beta_acc(TReg_1D$Gamma, beta_list)
       trr_1d_time_list[rep] <- t1
       
       # TRR - ECD
       t2 <- system.time({
         TReg_ECD <- TRR.fit(X@data, Y, u = rep(1, length(r_vec)), method = "ECD")
       })["elapsed"]
-      trr_ecd_est <- TReg_ECD$Gamma
-      trr_ecd_acc_list[rep] <- beta_acc(trr_ecd_est, beta_list)
+      trr_ecd_acc_list[rep] <- beta_acc(TReg_ECD$Gamma, beta_list)
       trr_ecd_time_list[rep] <- t2
     }
     
@@ -74,7 +70,7 @@ results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS", 
       file = output_file
     )
     
-    # Return log
+    # Return log message
     data.frame(
       n            = rep(n, n_rep),
       f_num        = rep(f_num, n_rep),
@@ -93,6 +89,7 @@ results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS", 
                message = paste("ERROR:", e$message))
   })
 }
+
 
 numeric_cols <- sapply(results_log, is.numeric)
 

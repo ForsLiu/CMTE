@@ -1,6 +1,6 @@
 setwd("C:/Users/yh95l/Desktop/CMTE")
 
-file.remove(list.files("Data_1.3", full.names = TRUE))
+unlink(list.files("Data_1.3", full.names = TRUE), recursive = TRUE, force = TRUE)
 file.remove(list.files("results_1.3", full.names = TRUE))
 
 source("./parameters_1.3.R")
