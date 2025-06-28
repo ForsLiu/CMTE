@@ -5,7 +5,7 @@ library(foreach)
 library(doParallel)
 library("TRES")
 
-unlink(list.files("results_1.3", pattern = "^coef_est_cmte", full.names = TRUE), force = TRUE)
+unlink(list.files("results_1.3", pattern = "^coef_est_tmddm", full.names = TRUE), force = TRUE)
 
 n_cores <- max(1, min(parallel::detectCores() - 2, nrow(param_grid)))
 cl <- makeCluster(n_cores)

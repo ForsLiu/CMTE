@@ -63,6 +63,8 @@ CMTE <- function(X, Y, M_xy, eps = 1e-6, method) {
     }
     
     Sigma_Y <- cov(Yk_mat)
+    Sigma_Y <- Sigma_Y + diag(1e-6, nrow(Sigma_Y)) #computationally singular 
+    
     if (method == "1D") {
       beta_list[[k]] <- OptM1D(Sigma_Y, M_xy[[k]], 1)
     }

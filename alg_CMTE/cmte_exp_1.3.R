@@ -26,8 +26,8 @@ results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS", 
     
     r_str <- paste(r_vec, collapse = "x")
     
-    cmte_1d_acc_list   <- numeric(n_rep)
-    cmte_ecd_acc_list  <- numeric(n_rep)
+    cmte_1d_acc_list   <- vector("list", n_rep)
+    cmte_ecd_acc_list  <- vector("list", n_rep)
     cmte_1d_time_list  <- numeric(n_rep)
     cmte_ecd_time_list <- numeric(n_rep)
     
@@ -48,13 +48,13 @@ results_log <- foreach(i = 1:nrow(param_grid), .packages = c("rTensor", "MASS", 
       t1 <- system.time({
         cmte_1d_est <- CMTE(X@data, Y, M_list, eps = 1e-6, method = "1D")
       })["elapsed"]
-      cmte_1d_acc_list[rep] <- beta_acc(cmte_1d_est, beta_list)
+      cmte_1d_acc_list[[rep]] <- beta_acc(cmte_1d_est, beta_list)
       cmte_1d_time_list[rep] <- t1
       
       t2 <- system.time({
         cmte_ecd_est <- CMTE(X@data, Y, M_list, eps = 1e-6, method = "ECD")
       })["elapsed"]
-      cmte_ecd_acc_list[rep] <- beta_acc(cmte_ecd_est, beta_list)
+      cmte_ecd_acc_list[[rep]] <- beta_acc(cmte_ecd_est, beta_list)
       cmte_ecd_time_list[rep] <- t2
     }
     
