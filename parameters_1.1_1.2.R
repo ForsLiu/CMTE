@@ -18,7 +18,7 @@ eps_list   <- c(0.1)
 n_list     <- c(50,100,200,500)
 Omega_list <- c(3)
 f_num_list <- c(1,2)
-n_rep      <- 5
+n_rep      <- 3
 
 # combinations
 param_grid <- expand.grid(

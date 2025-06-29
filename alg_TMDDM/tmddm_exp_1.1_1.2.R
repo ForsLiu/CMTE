@@ -1,5 +1,6 @@
 source("./parameters_1.1_1.2.R")
 source("./Evaluation.R")
+source("./alg_CMTE/cmte.R")
 
 library(foreach)
 library(doParallel)
