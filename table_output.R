@@ -7,41 +7,37 @@ for (i in 1:nrow(param_grid)) {
   n     <- param_grid$n[i]
   Omega <- param_grid$Omega[i]
   f_num <- param_grid$f_num[i]
+  n_dir <- param_grid$n_dir[i]
   
   r_str <- paste(r_vec, collapse = "x")
   r_latex <- paste0("\\(", paste(r_vec, collapse = " \\times "), "\\)")
-  Omega_latex <- "\\(\\exp(3)\\)"
+  Omega_latex <- paste0("\\(", n_dir, " \\times ", n_dir, "\\)")
   
   f_expr <- switch(as.character(f_num),
                    "1" = "\\(X\\)",
                    "2" = "\\(\\exp(2|X|)\\)",
-                   "3" = "\\(\\sin(X)\\)",
+                   "3" = "\\(X^2\\)",
                    "f(X) = \\text{Unknown}")
   
-  # Define expected files
-  file_cmte  <- sprintf("results_1.3/coef_est_cmte_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
-                        n, p, r_str, eps, f_num, n_rep)
-  file_trr   <- sprintf("results_1.3/coef_est_trr_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
-                        n, p, r_str, eps, f_num, n_rep)
-  file_tmddm <- sprintf("results_1.3/coef_est_tmddm_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData",
-                        n, p, r_str, eps, f_num, n_rep)
+  file_cmte  <- sprintf("results/coef_est_cmte_n%d_p%d_r%s_eps%.2f_fn%d_dir%d_rep%d.RData",
+                        n, p, r_str, eps, f_num, n_dir, n_rep)
+  file_trr   <- sprintf("results/coef_est_trr_n%d_p%d_r%s_eps%.2f_fn%d_dir%d_rep%d.RData",
+                        n, p, r_str, eps, f_num, n_dir, n_rep)
+  file_tmddm <- sprintf("results/coef_est_tmddm_n%d_p%d_r%s_eps%.2f_fn%d_dir%d_rep%d.RData",
+                        n, p, r_str, eps, f_num, n_dir, n_rep)
   
   acc_lists <- list()
   time_lists <- list()
   
   if (file.exists(file_cmte)) {
     env <- new.env(); load(file_cmte, envir = env)
-    acc_lists[["CMTE-1D"]] <- env$cmte_1d_acc_list
     acc_lists[["CMTE-ECD"]] <- env$cmte_ecd_acc_list
-    time_lists[["CMTE-1D"]] <- env$cmte_1d_time_list
     time_lists[["CMTE-ECD"]] <- env$cmte_ecd_time_list
   }
   
   if (file.exists(file_trr)) {
     env <- new.env(); load(file_trr, envir = env)
-    acc_lists[["TRR-1D"]] <- env$trr_1d_acc_list
     acc_lists[["TRR-ECD"]] <- env$trr_ecd_acc_list
-    time_lists[["TRR-1D"]] <- env$trr_1d_time_list
     time_lists[["TRR-ECD"]] <- env$trr_ecd_time_list
   }
   
@@ -53,9 +49,8 @@ for (i in 1:nrow(param_grid)) {
   
   if (length(acc_lists) == 0) next
   
-  # Pad and round
   method_acc_map <- lapply(acc_lists, function(acc) {
-    acc <- round(acc, 4)
+    acc <- round(unlist(acc), 4)
     while (length(acc) < 2) acc <- c(acc, NA)
     acc
   })
@@ -133,22 +128,26 @@ headers <- c(
   "\\(\\text{Avg Time (s)}\\)"
 )
 
-header_row <- paste(headers, collapse = " & ")
-latex_rows <- lapply(rows, function(row) paste(row, collapse = " & "))
-
-cat("\\begin{table}[ht]\n")
-cat("\\centering\n")
-cat("\\label{tab:beta_results}\n")
-cat("\\begin{tabular}{", paste(rep("l", length(headers)), collapse = ""), "}\n")
+cat("\\begin{longtable}{", paste(rep("l", length(headers)), collapse = ""), "}\n", sep = "")
 cat("\\hline\n")
-cat(header_row, " \\\\\n")
+cat(paste(headers, collapse = " & "), " \\\\\n")
 cat("\\hline\n")
+cat("\\endfirsthead\n")
+cat("\\hline\n")
+cat(paste(headers, collapse = " & "), " \\\\\n")
+cat("\\hline\n")
+cat("\\endhead\n")
+cat("\\hline\n")
+cat("\\endfoot\n")
+cat("\\endlastfoot\n")
 
+block_size <- 3
 for (i in seq_along(latex_rows)) {
   cat(latex_rows[[i]], " \\\\\n")
-  if (i %% 5 == 0) cat("\\hline\n")
+  if (i %% block_size == 0) {
+    cat("\\hline\n")
+  }
 }
 
-cat("\\end{tabular}\n")
-cat("\\caption{Estimation Accuracy and Runtime for \\(\\beta_i\\)'s from CMTE, TRR, and TMDDM variants for example 1.3}\n")
-cat("\\end{table}\n")
+cat("\\caption{Estimation Accuracy and Runtime for \\(\\beta_i\\)'s from CMTE, TRR, and TMDDM.}\n")
+cat("\\end{longtable}\n")

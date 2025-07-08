@@ -42,54 +42,65 @@ DGen_Omega <- function(m,c) {
   return(Omega)
 }
 
-DGen_Omega0 <- function(r) {
-  Or <- qr.Q(qr(matrix(rnorm((r - 2)^2), nrow = r - 2)))
-  diag_vals <- exp(seq(2, -1.5, length.out = r - 2))
+DGen_Omega0 <- function(r,n_dir) {
+  Or <- qr.Q(qr(matrix(rnorm((r - n_dir)^2), nrow = r - n_dir)))
+  diag_vals <- exp(seq(2, 2 - 0.5 * (r - n_dir - 1), by = -0.5))
   Or %*% diag(diag_vals) %*% t(Or)
 }
 
-DGen_Sigma <- function(beta_list, Omega_c) {
+DGen_Sigma <- function(beta_list, Omega_c, n_dir) {
   m <- length(beta_list)
   Sigma_list <- vector("list", m)
-  #alpha_list <- vector("list", m)
   
   for (i in seq_len(m)) {
-    beta <- beta_list[[i]]
+    beta <- beta_list[[i]]  # r x d
     r <- nrow(beta)
     d <- ncol(beta)
-    d0 <- r - d
     
-    alpha <- matrix(runif(r, -1, 1), nrow = r) #10x1
-    tilde_beta <- qr.Q(qr(cbind(beta, alpha)))  # 10 x 2 orthogonalized, t(tilde_beta) %*% tilde_beta in I_2x2
-    tilde_beta_full <- qr.Q(qr(cbind(tilde_beta, matrix(runif(r * d0), nrow = r))))
+    stopifnot(d + n_dir <= r)
     
-    Omega <- DGen_Omega(2,Omega_c) #2x2
-    Omega0 <- DGen_Omega0(r)  #(ri-2)x(ri-2) = 8x8
+    # alpha: r x n_dir
+    alpha <- matrix(runif(r * n_dir, -1, 1), nrow = r)
     
-    tilde_beta0 <- tilde_beta_full[, 3:r, drop = FALSE] #10x8
+    # Combine beta and alpha, then orthonormalize
+    tilde_beta <- qr.Q(qr(cbind(beta, alpha)))  # r x (d + n_dir)
     
-    Sigma_i <- tilde_beta %*% Omega %*% t(tilde_beta) + tilde_beta0 %*% Omega0 %*% t(tilde_beta0)
-    #10x2 * 2x2 2x10 + 10x8 * 8x8 *8x10  
+    # Extend to full orthonormal basis
+    tilde_beta_full <- qr.Q(qr(cbind(tilde_beta, matrix(runif(r * (r - (d + n_dir))), nrow = r))))
+    
+    # Omega for informative subspace
+    Omega <- DGen_Omega(n_dir, Omega_c)  # n_dir x n_dir
+    
+    # Omega0 for complement subspace
+    Omega0 <- DGen_Omega0(r,n_dir)  # (r - n_dir) x (r - n_dir)
+    
+    # Select complement directions
+    tilde_beta0 <- tilde_beta_full[, (d + n_dir):r, drop = FALSE]  # r x (r - d - n_dir + 1)
+    
+    # Sigma = informative + complement parts
+    Sigma_i <- tilde_beta[, (d + 1):(d + n_dir), drop = FALSE] %*% Omega %*% 
+               t(tilde_beta[, (d + 1):(d + n_dir), drop = FALSE]) +
+               tilde_beta0 %*% Omega0 %*% t(tilde_beta0)
+    
     Sigma_list[[i]] <- Sigma_i
-    #alpha_list[[i]] <- alpha
   }
-  
+
   Sigma <- Sigma_list[[1]]
   if (m > 1) {
     for (i in 2:m) {
       Sigma <- kronecker(Sigma_list[[i]], Sigma)
     }
   }
+
+  Sigma <- Sigma + diag(1e-6, nrow(Sigma))
   
   return(Sigma)
 }
-
 
 DGen_E <- function(n, L) {
   Z <- matrix(rnorm(n * ncol(L)), nrow = n)
   Z %*% t(L)
 }
-
 
 DGen_Y <- function(B, X, eps, L, function_num) {
   m <- length(dim(B)) - 1
@@ -107,7 +118,7 @@ DGen_Y <- function(B, X, eps, L, function_num) {
   } else if (function_num == 2) {
     X_tilde <- exp(2 * abs(X_mat))
   } else if (function_num == 3) {
-    X_tilde <- sin(X_mat)
+    X_tilde <- X_mat ^ 2
   } else {
     stop("Invalid function_num.")
   }
@@ -125,9 +136,7 @@ DGen_Y <- function(B, X, eps, L, function_num) {
   return(Y)
 }
 
-
 rp_grid <- unique(param_grid[c("r_index", "p")])
-
 
 
 for (i in 1:nrow(param_grid)) {
@@ -138,21 +147,22 @@ for (i in 1:nrow(param_grid)) {
   n        <- param_grid$n[i]
   Omega_c  <- param_grid$Omega_c[i]
   f_num    <- param_grid$f_num[i]
+  n_dir    <- param_grid$n_dir[i]
   
   r_str <- paste(r_vec, collapse = "x")
-  dir_name <- sprintf("Data_1.3/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d", 
-                      n, p, r_str, eps, f_num, n_rep)
+  dir_name <- sprintf("Data/SimData_n%d_p%d_r%s_eps%.2f_fn%d_dir%d_rep%d", 
+                      n, p, r_str, eps, f_num, n_dir, n_rep)
   dir.create(dir_name, recursive = TRUE, showWarnings = FALSE)
   
-  message(sprintf("=== Start: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d ===", 
-                  n, p, r_str, eps, f_num))
+  message(sprintf("=== Start: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d, n_dir = %d ===", 
+                  n, p, r_str, eps, f_num, n_dir))
   
   t_start <- Sys.time()
   
   B_list    <- DGen_B(r_vec, p)
   B         <- B_list$B
   beta_list <- B_list$beta_list
-  Sigma     <- DGen_Sigma(beta_list, exp(Omega_c))
+  Sigma     <- DGen_Sigma(beta_list, exp(Omega_c), n_dir)
   L         <- chol(Sigma)
   
   for (rep in 1:n_rep) {
@@ -161,21 +171,20 @@ for (i in 1:nrow(param_grid)) {
     X <- DGen_X(n, p)
     Y <- DGen_Y(B, X, eps, L, function_num = f_num)
     
-    file_name <- sprintf("%s/SimData_n%d_p%d_r%s_eps%.2f_fn%d_rep%d.RData", 
-                         dir_name, n, p, r_str, eps, f_num, rep)
+    file_name <- sprintf("%s/SimData_n%d_p%d_r%s_eps%.2f_fn%d_dir%d_rep%d.RData", 
+                         dir_name, n, p, r_str, eps, f_num, n_dir, rep)
     save(Y, X, B_list, file = file_name)
     
     if (rep %% ceiling(n_rep / 5) == 0 || rep == 1 || rep == n_rep) {
       cur_time <- Sys.time()
       elapsed <- difftime(cur_time, t_start, units = "secs")
-      message(sprintf("[Progress] rep %d / %d | Time = %s | Elapsed = %.1f sec | Params: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d",
+      message(sprintf("[Progress] rep %d / %d | Time = %s | Elapsed = %.1f sec | Params: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d, n_dir = %d",
                       rep, n_rep, format(cur_time, "%H:%M:%S"), as.numeric(elapsed),
-                      n, p, r_str, eps, f_num))
+                      n, p, r_str, eps, f_num, n_dir))
     }
   }
   
   t_end <- Sys.time()
-  message(sprintf("=== Completed: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d | Total Time: %.2f sec ===\n",
-                  n, p, r_str, eps, f_num, as.numeric(difftime(t_end, t_start, units = "secs"))))
+  message(sprintf("=== Completed: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d, n_dir = %d | Total Time: %.2f sec ===\n",
+                  n, p, r_str, eps, f_num, n_dir, as.numeric(difftime(t_end, t_start, units = "secs"))))
 }
-
