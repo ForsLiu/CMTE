@@ -1,6 +1,6 @@
-source("./parameters.R")
+#source("./parameters.R")
 source("./Evaluation.R")
-source("./alg_CMTE/cmte.R")  # for TMDDM and beta_acc
+source("./alg_CMTE/cmte.R") 
 
 library(foreach)
 library(doParallel)

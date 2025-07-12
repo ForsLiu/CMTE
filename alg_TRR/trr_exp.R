@@ -1,4 +1,4 @@
-source("./parameters.R")
+#source("./parameters.R")
 source("./Evaluation.R")
 
 library(foreach)

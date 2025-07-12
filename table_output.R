@@ -142,8 +142,8 @@ cat("\\endfoot\n")
 cat("\\endlastfoot\n")
 
 block_size <- 3
-for (i in seq_along(latex_rows)) {
-  cat(latex_rows[[i]], " \\\\\n")
+for (i in seq_along(rows)) {
+  cat(paste(rows[[i]], collapse = " & "), " \\\\\n")
   if (i %% block_size == 0) {
     cat("\\hline\n")
   }

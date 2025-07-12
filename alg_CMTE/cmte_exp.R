@@ -1,4 +1,4 @@
-source("./parameters.R")
+#source("./parameters.R")
 source("./alg_CMTE/cmte.R")
 source("./Evaluation.R")
 
