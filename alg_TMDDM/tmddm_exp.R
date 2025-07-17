@@ -7,7 +7,7 @@ library(doParallel)
 library("TRES")
 
 # Remove old TMDDM result files
-unlink(list.files("results", pattern = "^coef_est_tmddm", full.names = TRUE), force = TRUE)
+#unlink(list.files("results", pattern = "^coef_est_tmddm", full.names = TRUE), force = TRUE)
 
 # Set up parallel backend
 n_cores <- max(1, min(parallel::detectCores() - 2, nrow(param_grid)))

@@ -7,7 +7,7 @@ n_list     <- c(50,100,200,500)
 Omega_list <- c(3)
 f_num_list <- c(1,2,3)
 n_rep      <- 2
-n_dir_list <- c(1,2,3,4,5)
+n_dir_list <- c(3,4,5)
 #n_dir_list <- c(1,2,3)
 
 # combinations

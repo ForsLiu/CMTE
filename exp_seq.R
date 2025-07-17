@@ -1,4 +1,5 @@
 setwd("C:/Users/yh95l/Desktop/CMTE")
+#setwd("~/Desktop/CMTE")
 
 library(foreach)
 library(doParallel)
@@ -9,17 +10,22 @@ file.remove(list.files("results", full.names = TRUE))
 
 # Define parameter lists
 r_vec_list <- list(c(10,10), c(50,50), c(100,100))
-r_vec_list <- list(c(10,10), c(50,50))
+#r_vec_list <- list(c(10,10), c(50,50))
 p_list     <- c(3)
 eps_list   <- c(0.1)
 n_list     <- c(50, 100, 200, 500)
-n_list     <- c(50, 100)
+#n_list     <- c(50, 100)
 Omega_list <- c(3)
 f_num_list <- c(1, 2, 3)
-f_num_list <- c(2, 3)
-n_rep      <- 2
+#f_num_list <- c(2, 3)
+n_rep      <- 20
 
-for (n_dir in 1:3) {
+source("./Evaluation.R")
+
+for (n_dir in 3:5) {
+  # Cleanup Data
+  unlink(list.files("Data", full.names = TRUE), recursive = TRUE, force = TRUE)
+  
   cat(sprintf("=== [%s] Running for n_dir = %d ===\n", Sys.time(), n_dir))
   
   param_grid <- expand.grid(
@@ -33,7 +39,6 @@ for (n_dir in 1:3) {
   )
   
   source("./DataGen.R")
-  source("./Evaluation.R")
   
   cat(sprintf("=== [%s] Running CMTE ===\n", Sys.time()))
   source("./alg_CMTE/cmte_exp.R")
@@ -43,11 +48,9 @@ for (n_dir in 1:3) {
   
   cat(sprintf("=== [%s] Running TMDDM ===\n", Sys.time()))
   source("./alg_TMDDM/tmddm_exp.R")
-  
-  # Cleanup Data
-  unlink(list.files("Data", full.names = TRUE), recursive = TRUE, force = TRUE)
 }
 
+source("./parametes.R")
 
 #generate table
 source("./table_output.R")

@@ -139,6 +139,10 @@ DGen_Y <- function(B, X, eps, L, function_num) {
 rp_grid <- unique(param_grid[c("r_index", "p")])
 
 
+n_cores <- max(1, parallel::detectCores() - 2)
+cl <- makeCluster(n_cores)
+registerDoParallel(cl)
+
 for (i in 1:nrow(param_grid)) {
   
   r_vec    <- r_vec_list[[param_grid$r_index[i]]]
@@ -165,8 +169,8 @@ for (i in 1:nrow(param_grid)) {
   Sigma     <- DGen_Sigma(beta_list, exp(Omega_c), n_dir)
   L         <- chol(Sigma)
   
-  for (rep in 1:n_rep) {
-    rep_start <- Sys.time()
+  foreach(rep = 1:n_rep, .packages = c("rTensor", "MASS")) %dopar% {
+    set.seed(rep)
     
     X <- DGen_X(n, p)
     Y <- DGen_Y(B, X, eps, L, function_num = f_num)
@@ -174,17 +178,12 @@ for (i in 1:nrow(param_grid)) {
     file_name <- sprintf("%s/SimData_n%d_p%d_r%s_eps%.2f_fn%d_dir%d_rep%d.RData", 
                          dir_name, n, p, r_str, eps, f_num, n_dir, rep)
     save(Y, X, B_list, file = file_name)
-    
-    if (rep %% ceiling(n_rep / 5) == 0 || rep == 1 || rep == n_rep) {
-      cur_time <- Sys.time()
-      elapsed <- difftime(cur_time, t_start, units = "secs")
-      message(sprintf("[Progress] rep %d / %d | Time = %s | Elapsed = %.1f sec | Params: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d, n_dir = %d",
-                      rep, n_rep, format(cur_time, "%H:%M:%S"), as.numeric(elapsed),
-                      n, p, r_str, eps, f_num, n_dir))
-    }
   }
   
   t_end <- Sys.time()
   message(sprintf("=== Completed: n = %d, p = %d, r = %s, eps = %.2f, f_num = %d, n_dir = %d | Total Time: %.2f sec ===\n",
                   n, p, r_str, eps, f_num, n_dir, as.numeric(difftime(t_end, t_start, units = "secs"))))
 }
+
+# Stop parallel backend
+stopCluster(cl)
