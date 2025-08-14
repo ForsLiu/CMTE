@@ -75,5 +75,3 @@ CMTE <- function(X, Y, M_xy, eps = 1e-6, method) {
   
   return(beta_list)
 }
-
-

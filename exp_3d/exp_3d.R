@@ -1,11 +1,11 @@
 setwd("C:/Users/yh95l/Desktop/CMTE")
-#setwd("~/Desktop/CMTE")
 
 unlink(list.files("Data", full.names = TRUE), recursive = TRUE, force = TRUE)
 file.remove(list.files("results", full.names = TRUE))
 
-source("./parameters_0724.R")
-source("./DataGen.R")
+source("./exp_3d/parameters_3d.R")
+print(nrow(param_grid))
+source("./exp_3d/DataGen_3d.R")
 source("./Evaluation.R")
 
 library(foreach)
