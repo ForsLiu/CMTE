@@ -1,14 +1,15 @@
 # parameter grids
 r_vec_list <- list(c(5,5,5),c(10,10,10),c(15,15,15))
-r_vec_list <- list(c(25,25,25))
+#r_vec_list <- list(c(5,5,5),c(10,10,10))
+#r_vec_list <- list(c(25,25,25))
 #r_vec_list <- list(c(10,10),c(50,50))
 p_list     <- c(3)
 eps_list   <- c(0.1)
-n_list     <- c(200)
+n_list     <- c(100,200,500)
 Omega_list <- c(3)
 f_num_list <- c(2,3)
-n_rep      <- 2
-n_dir_list <- c(1,2,3)
+n_rep      <- 20
+n_dir_list <- c(1,2,3,4)
 
 # combinations
 param_grid <- expand.grid(
